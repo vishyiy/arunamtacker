@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arunam Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Cinzel:wght@400;500&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1208;
+    --surface: #231a0e;
+    --surface2: #2e2210;
+    --border: #5a3e1b;
+    --border-light: #7a5a2a;
+    --gold: #c9973a;
+    --gold-light: #e8c068;
+    --gold-pale: #f5e4b0;
+    --text: #f0e4c8;
+    --text-muted: #a08860;
+    --saffron: #e07b20;
+    --green: #5a8a50;
+    --green-light: #7ab870;
+    --red: #a04030;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Cormorant Garamond', serif;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(201,151,58,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(224,123,32,0.06) 0%, transparent 60%);
+  }
+
+  header {
+    text-align: center;
+    padding: 28px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(201,151,58,0.06) 0%, transparent 100%);
+    position: relative;
+  }
+
+  header::before, header::after {
+    content: '᳡';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    color: var(--gold);
+    opacity: 0.5;
+  }
+  header::before { left: 20px; }
+  header::after { right: 20px; }
+
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--gold-light);
+    text-transform: uppercase;
+  }
+
+  .subtitle {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 12px 8px;
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    cursor: pointer;
+    border: none;
+    background: none;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .tab.active {
+    color: var(--gold-light);
+    border-bottom: 2px solid var(--gold);
+    margin-bottom: -1px;
+  }
+
+  .tab:hover:not(.active) { color: var(--text); }
+
+  .page { display: none; padding: 16px; }
+  .page.active { display: block; }
+
+  /* TODAY PAGE */
+  .today-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .today-date {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .today-stats {
+    font-size: 12px;
+    color: var(--gold);
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.08em;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-muted);
+  }
+
+  .empty-state .om {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.3;
+  }
+
+  .empty-state p {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .anuvakam-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .anuvakam-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--gold);
+  }
+
+  .anuvakam-card.phase-abhyasam::before { background: var(--saffron); }
+  .anuvakam-card.phase-repetition::before { background: var(--green); }
+  .anuvakam-card.completed { opacity: 0.6; }
+  .anuvakam-card.completed::before { background: var(--text-muted); }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .anuvakam-name {
+    font-family: 'Cinzel', serif;
+    font-size: 15px;
+    color: var(--gold-light);
+    letter-spacing: 0.08em;
+  }
+
+  .phase-badge {
+    font-size: 10px;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.1em;
+    padding: 2px 8px;
+    border-radius: 2px;
+    background: rgba(201,151,58,0.15);
+    border: 1px solid var(--border);
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  .phase-badge.abhyasam { background: rgba(224,123,32,0.15); color: var(--saffron); border-color: var(--saffron); }
+  .phase-badge.repetition { background: rgba(90,138,80,0.15); color: var(--green-light); border-color: var(--green); }
+
+  .card-cycle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    font-style: italic;
+  }
+
+  .count-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .count-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .count-btn:active { transform: scale(0.92); }
+  .count-btn.plus { border-color: var(--gold); color: var(--gold); }
+  .count-btn.minus { border-color: var(--border-light); color: var(--text-muted); }
+
+  .count-display {
+    flex: 1;
+    text-align: center;
+  }
+
+  .count-fraction {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    color: var(--text);
+  }
+
+  .count-fraction span { color: var(--text-muted); font-size: 14px; }
+
+  .progress-bar {
+    width: 100%;
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  .phase-valle .progress-fill { background: linear-gradient(90deg, var(--gold), var(--gold-light)); }
+  .phase-abhyasam .progress-fill { background: linear-gradient(90deg, var(--saffron), #f0a050); }
+  .phase-repetition .progress-fill { background: linear-gradient(90deg, var(--green), var(--green-light)); }
+
+  .complete-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(201,151,58,0.1);
+    border: 1px solid var(--gold);
+    color: var(--gold-light);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+
+  .complete-btn:hover { background: rgba(201,151,58,0.2); }
+  .complete-btn.done { background: rgba(90,138,80,0.15); border-color: var(--green); color: var(--green-light); }
+
+  /* MANAGE PAGE */
+  .section-title {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .add-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+  }
+
+  label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    min-width: 80px;
+  }
+
+  select, input[type="number"] {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 10px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    border-radius: 2px;
+    outline: none;
+  }
+
+  select:focus, input:focus { border-color: var(--gold); }
+
+  .add-btn {
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(135deg, rgba(201,151,58,0.2), rgba(201,151,58,0.1));
+    border: 1px solid var(--gold);
+    color: var(--gold-light);
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+
+  .add-btn:hover { background: rgba(201,151,58,0.3); }
+
+  .anuvakam-list-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .list-item-left { flex: 1; }
+  .list-item-name {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: var(--gold-light);
+    letter-spacing: 0.08em;
+  }
+
+  .list-item-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    font-style: italic;
+  }
+
+  .list-item-actions { display: flex; gap: 8px; }
+
+  .action-btn {
+    padding: 5px 10px;
+    border-radius: 2px;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+
+  .action-btn.advance { border-color: var(--gold); color: var(--gold); }
+  .action-btn.remove { border-color: var(--red); color: #e06050; }
+  .action-btn:hover { opacity: 0.8; }
+
+  /* PROGRESS PAGE */
+  .progress-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .progress-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 6px;
+    text-align: center;
+  }
+
+  .progress-cell-num {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    color: var(--gold-light);
+    margin-bottom: 4px;
+  }
+
+  .progress-cell-phase {
+    font-size: 9px;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .progress-cell.valle .progress-cell-phase { color: var(--gold); }
+  .progress-cell.abhyasam .progress-cell-phase { color: var(--saffron); }
+  .progress-cell.repetition .progress-cell-phase { color: var(--green-light); }
+  .progress-cell.done .progress-cell-phase { color: var(--text-muted); }
+
+  .progress-cell-cycle {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--gold);
+    color: var(--gold-light);
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: transform 0.3s ease;
+    z-index: 100;
+    white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px 0;
+    position: relative;
+  }
+
+  .divider::after {
+    content: '✦';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg);
+    padding: 0 8px;
+    color: var(--border-light);
+    font-size: 10px;
+  }
+
+  .summary-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+  }
+
+  .summary-stat { }
+  .summary-num {
+    font-family: 'Cinzel', serif;
+    font-size: 22px;
+    color: var(--gold-light);
+  }
+  .summary-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* BACKUP SECTION */
+  .backup-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .backup-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .backup-btn {
+    flex: 1;
+    padding: 11px 8px;
+    border-radius: 2px;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .backup-btn.export {
+    border-color: var(--gold);
+    color: var(--gold-light);
+    background: rgba(201,151,58,0.1);
+  }
+
+  .backup-btn.export:hover { background: rgba(201,151,58,0.2); }
+
+  .backup-btn.import {
+    border-color: var(--saffron);
+    color: #f0a060;
+    background: rgba(224,123,32,0.1);
+  }
+
+  .backup-btn.import:hover { background: rgba(224,123,32,0.2); }
+
+  .backup-info {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+    line-height: 1.5;
+    margin-top: 10px;
+  }
+
+  .last-backup {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.06em;
+    margin-top: 8px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Arunam</h1>
+  <div class="subtitle">Taittirīya Āraṇyaka · Anuvāka Tracker</div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('today')">Today</button>
+  <button class="tab" onclick="showTab('manage')">Manage</button>
+  <button class="tab" onclick="showTab('progress')">Progress</button>
+</div>
+
+<div id="today" class="page active"></div>
+<div id="manage" class="page"></div>
+<div id="progress" class="page"></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Storage ──────────────────────────────────────────────────────────────────
+function load() {
+  try { return JSON.parse(localStorage.getItem('arunam_v2') || 'null'); } catch { return null; }
+}
+function save(data) {
+  localStorage.setItem('arunam_v2', JSON.stringify(data));
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+// anuvakam: { id, number, phase: 'valle'|'abhyasam'|'repetition', cycle: 1-10, dayInCycle: 1-10, totalDays }
+// todayLog: { date: 'YYYY-MM-DD', counts: { anuvakamId: number } }
+
+let state = load() || { anuvakams: [], logs: [] };
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getTodayLog() {
+  const d = todayStr();
+  let log = state.logs.find(l => l.date === d);
+  if (!log) { log = { date: d, counts: {} }; state.logs.push(log); save(state); }
+  return log;
+}
+
+function phaseTarget(phase) {
+  if (phase === 'valle') return 10;
+  if (phase === 'abhyasam') return 2;
+  return 1;
+}
+
+function phaseLabel(phase) {
+  if (phase === 'valle') return 'Valle';
+  if (phase === 'abhyasam') return 'Abhyasam';
+  return 'Repetition';
+}
+
+function cycleLabel(a) {
+  const prefix = a.phase === 'valle' ? 'V' : a.phase === 'abhyasam' ? 'A' : 'R';
+  return prefix + a.cycle;
+}
+
+// Advance anuvakam to next cycle/phase - replaced by manual add
+
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── TODAY PAGE ────────────────────────────────────────────────────────────────
+function renderToday() {
+  const el = document.getElementById('today');
+  const log = getTodayLog();
+  const active = state.anuvakams.filter(a => !a.completed);
+
+  const date = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const done = active.filter(a => (log.counts[a.id] || 0) >= phaseTarget(a.phase)).length;
+
+  let html = `
+    <div class="today-header">
+      <div class="today-date">${date}</div>
+      <div class="today-stats">${done} / ${active.length} done</div>
+    </div>`;
+
+  if (active.length === 0) {
+    html += `<div class="empty-state">
+      <div class="om">ॐ</div>
+      <p>No Anuvakams added yet.<br>Go to <em>Manage</em> to begin your practice.</p>
+    </div>`;
+  } else {
+    active.forEach(a => {
+      const count = log.counts[a.id] || 0;
+      const target = phaseTarget(a.phase);
+      const pct = Math.min(100, Math.round((count / target) * 100));
+      const isComplete = count >= target;
+      html += `
+        <div class="anuvakam-card phase-${a.phase} ${isComplete ? 'completed' : ''}">
+          <div class="card-top">
+            <div class="anuvakam-name">Anuvākam ${a.number}</div>
+            <div class="phase-badge ${a.phase}">${phaseLabel(a.phase)}</div>
+          </div>
+          <div class="card-cycle">${cycleLabel(a)} · Day target: ${target}×</div>
+          <div class="count-row">
+            <button class="count-btn minus" onclick="changeCount('${a.id}', -1)">−</button>
+            <div class="count-display">
+              <div class="count-fraction">${count}<span> / ${target}</span></div>
+            </div>
+            <button class="count-btn plus" onclick="changeCount('${a.id}', 1)">+</button>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${pct}%"></div>
+          </div>
+          ${isComplete ? `<button class="complete-btn done" disabled>✓ Completed Today</button>` : ''}
+        </div>`;
+    });
+  }
+
+  el.innerHTML = html;
+}
+
+function changeCount(id, delta) {
+  const log = getTodayLog();
+  const a = state.anuvakams.find(x => x.id === id);
+  if (!a) return;
+  const target = phaseTarget(a.phase);
+  const cur = log.counts[id] || 0;
+  log.counts[id] = Math.max(0, Math.min(target, cur + delta));
+  save(state);
+  renderToday();
+}
+
+// ── MANAGE PAGE ───────────────────────────────────────────────────────────────
+function cycleOptions(phase) {
+  const prefix = phase === 'valle' ? 'V' : phase === 'abhyasam' ? 'A' : 'R';
+  return Array.from({length:10}, (_,i) => `<option value="${i+1}">${prefix}${i+1}</option>`).join('');
+}
+
+function renderManage() {
+  const el = document.getElementById('manage');
+  const numOptions = Array.from({length:32}, (_,i) => `<option value="${i+1}">Anuvākam ${i+1}</option>`).join('');
+
+  // Group entries by anuvakam number for display
+  const grouped = {};
+  state.anuvakams.forEach(a => {
+    if (!grouped[a.number]) grouped[a.number] = [];
+    grouped[a.number].push(a);
+  });
+
+  let listHtml = '';
+  Object.keys(grouped).sort((a,b) => a-b).forEach(num => {
+    grouped[num].forEach(a => {
+      listHtml += `
+        <div class="anuvakam-list-item">
+          <div class="list-item-left">
+            <div class="list-item-name">Anuvākam ${a.number} · ${cycleLabel(a)}</div>
+            <div class="list-item-status">${phaseLabel(a.phase)} · ${phaseTarget(a.phase)}×/day · ${a.completed ? 'Completed ✓' : 'Active'}</div>
+          </div>
+          <div class="list-item-actions">
+            ${!a.completed ? `<button class="action-btn advance" onclick="markComplete('${a.id}')">✓ Done</button>` : ''}
+            <button class="action-btn remove" onclick="removeAnuvakam('${a.id}')">✕</button>
+          </div>
+        </div>`;
+    });
+  });
+
+  el.innerHTML = `
+    <div class="section-title">Add Entry</div>
+    <div class="add-form">
+      <div class="form-row">
+        <label>Anuvākam</label>
+        <select id="sel-num">${numOptions}</select>
+      </div>
+      <div class="form-row">
+        <label>Phase</label>
+        <select id="sel-phase" onchange="updateCycleOpts()">
+          <option value="valle">Valle · 10×/day</option>
+          <option value="abhyasam">Abhyasam · 2×/day</option>
+          <option value="repetition">Repetition · 1×/day</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Cycle</label>
+        <select id="sel-cycle">${cycleOptions('valle')}</select>
+      </div>
+      <button class="add-btn" onclick="addAnuvakam()">+ Add to Today's Practice</button>
+    </div>
+    <div class="section-title">Backup & Restore</div>
+    <div class="backup-section">
+      <div class="backup-info">Export saves all your data to a .json file. Import restores it. Do this weekly to prevent data loss.</div>
+      <div class="backup-row">
+        <button class="backup-btn export" onclick="exportData()">⬇ Export</button>
+        <button class="backup-btn import" onclick="importData()">⬆ Import</button>
+      </div>
+      <div class="last-backup">${getLastBackup()}</div>
+    </div>
+    <div class="section-title">All Entries (${state.anuvakams.length})</div>
+    ${listHtml || '<p style="color:var(--text-muted);font-style:italic;font-size:14px;text-align:center;padding:20px 0;">No entries yet.</p>'}`;
+}
+
+function updateCycleOpts() {
+  const phase = document.getElementById('sel-phase').value;
+  document.getElementById('sel-cycle').innerHTML = cycleOptions(phase);
+}
+
+function addAnuvakam() {
+  const num = parseInt(document.getElementById('sel-num').value);
+  const phase = document.getElementById('sel-phase').value;
+  const cycle = parseInt(document.getElementById('sel-cycle').value);
+  if (!num) return;
+  // Check for duplicate
+  const exists = state.anuvakams.find(a => a.number === num && a.phase === phase && a.cycle === cycle && !a.completed);
+  if (exists) { showToast('Already active!'); return; }
+  state.anuvakams.push({
+    id: 'a' + Date.now(),
+    number: num,
+    phase,
+    cycle,
+    completed: false
+  });
+  state.anuvakams.sort((a, b) => a.number !== b.number ? a.number - b.number : a.cycle - b.cycle);
+  save(state);
+  showToast('Added Anuvākam ' + num + ' ' + (phase==='valle'?'V':phase==='abhyasam'?'A':'R') + cycle);
+  render();
+}
+
+function markComplete(id) {
+  const a = state.anuvakams.find(x => x.id === id);
+  if (!a) return;
+  if (!confirm('Mark Anuvākam ' + a.number + ' ' + cycleLabel(a) + ' as completed?')) return;
+  a.completed = true;
+  save(state);
+  showToast('Marked complete ✓');
+  render();
+}
+
+function removeAnuvakam(id) {
+  const a = state.anuvakams.find(x => x.id === id);
+  if (!confirm('Remove Anuvākam ' + (a?.number || '') + '?')) return;
+  state.anuvakams = state.anuvakams.filter(x => x.id !== id);
+  save(state);
+  render();
+}
+
+// ── PROGRESS PAGE ─────────────────────────────────────────────────────────────
+function renderProgress() {
+  const el = document.getElementById('progress');
+  const total = state.anuvakams.length;
+  const completed = state.anuvakams.filter(a => a.completed).length;
+  const inVallee = state.anuvakams.filter(a => a.phase === 'valle' && !a.completed).length;
+  const inAbhyasam = state.anuvakams.filter(a => a.phase === 'abhyasam' && !a.completed).length;
+  const inRep = state.anuvakams.filter(a => a.phase === 'repetition' && !a.completed).length;
+
+  let gridHtml = '';
+  for (let i = 1; i <= 32; i++) {
+    const a = state.anuvakams.find(x => x.number === i);
+    if (!a) {
+      gridHtml += `<div class="progress-cell"><div class="progress-cell-num" style="color:var(--text-muted)">${i}</div><div class="progress-cell-phase">—</div></div>`;
+    } else if (a.completed) {
+      gridHtml += `<div class="progress-cell done"><div class="progress-cell-num">✓</div><div class="progress-cell-phase">Done</div></div>`;
+    } else {
+      gridHtml += `<div class="progress-cell ${a.phase}"><div class="progress-cell-num">${i}</div><div class="progress-cell-phase">${cycleLabel(a)}</div></div>`;
+    }
+  }
+
+  el.innerHTML = `
+    <div class="summary-box">
+      <div class="summary-stat"><div class="summary-num">${total}</div><div class="summary-label">Active</div></div>
+      <div class="summary-stat"><div class="summary-num">${inVallee}</div><div class="summary-label">Valle</div></div>
+      <div class="summary-stat"><div class="summary-num">${inAbhyasam}</div><div class="summary-label">Abhyasam</div></div>
+      <div class="summary-stat"><div class="summary-num">${inRep}</div><div class="summary-label">Repeat</div></div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Valle</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--saffron)"></div>Abhyasam</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green-light)"></div>Repetition</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--text-muted)"></div>Not started</div>
+    </div>
+    <div class="section-title">All 32 Anuvākams</div>
+    <div class="progress-grid">${gridHtml}</div>`;
+}
+
+// ── EXPORT / IMPORT ───────────────────────────────────────────────────────────
+function exportData() {
+  const exportState = { ...state, exportedAt: new Date().toISOString(), version: 2 };
+  const json = JSON.stringify(exportState, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `arunam-backup-${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  localStorage.setItem('arunam_last_backup', new Date().toISOString());
+  showToast('Backup saved ✓');
+  render();
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const imported = JSON.parse(ev.target.result);
+        if (!imported.anuvakams || !imported.logs) {
+          alert('Invalid backup file. Please use a file exported from this tracker.');
+          return;
+        }
+        const dateLabel = imported.exportedAt ? new Date(imported.exportedAt).toLocaleDateString() : 'unknown date';
+        if (!confirm('Restore backup from ' + dateLabel + '?\n\nThis will overwrite your current data.')) return;
+        state = { anuvakams: imported.anuvakams, logs: imported.logs };
+        save(state);
+        localStorage.setItem('arunam_last_backup', imported.exportedAt || new Date().toISOString());
+        showToast('Data restored ✓');
+        render();
+      } catch(err) {
+        alert('Could not read file. Please try again.');
+      }
+    };
+    reader.readAsText(file);
+  };
+  document.body.appendChild(input);
+  input.click();
+  document.body.removeChild(input);
+}
+
+function getLastBackup() {
+  const t = localStorage.getItem('arunam_last_backup');
+  if (!t) return 'Never backed up';
+  const d = new Date(t);
+  const days = Math.floor((Date.now() - d) / 86400000);
+  if (days === 0) return 'Backed up today';
+  if (days === 1) return 'Backed up yesterday';
+  return 'Last backup: ' + days + ' days ago';
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const names = ['today', 'manage', 'progress'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  render();
+}
+
+function render() {
+  const active = document.querySelector('.page.active');
+  if (active.id === 'today') renderToday();
+  else if (active.id === 'manage') renderManage();
+  else if (active.id === 'progress') renderProgress();
+}
+
+render();
+</script>
+</body>
+</html>
